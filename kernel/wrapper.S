@@ -8,5 +8,8 @@
  */
 
 ENTRY(__wrapper_divbyzero)
+	add $1, total_count
+	jmp *orig_divbyzero
+	ret
 	/* NOT_IMPLEMENTED */
 ENDPROC(__wrapper_divbyzero)

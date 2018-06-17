@@ -3,7 +3,9 @@
 #include <linux/fs.h>
 #include <linux/interrupt.h>
 #include "main.h"
+#include <linux/vmalloc.h>
 
+struct idt_desc *old_dtr;
 MODULE_LICENSE("GPL");
 
 /* stores the original divbyzero handler */
@@ -47,22 +49,30 @@ static void imp_store_idt(struct idt_desc *dtr)
 */
 static unsigned long _read_idt_entry(struct idt_entry *e)
 {
+	unsigned long addr = ((e->higher16)<<16)|(e->lower16);
+    return addr;
 	/* NOT_IMPLEMENTED */
-	return 0;
+	//return 0;
 }
 
 /* Sets the routine address to addr in an idt entry
 */
 static void _write_idt_entry(struct idt_entry *e, unsigned long addr)
 {
+	e->lower16 = addr & 0x0000ffff;
+    e->higher16 = (addr >> 16);
 	/* NOT_IMPLEMENTED */
 }
 
 static void stop_tracking_divbyzero(void)
 {
 	/* stop tracking divbyzero if enabled */
-	if (orig_divbyzero != 0)
+	if( orig_divbyzero!=0 )
 	{
+    	_write_idt_entry((struct idt_entry *)(old_dtr->address), orig_divbyzero);
+		imp_load_idt(old_dtr);
+		total_count = 0;		
+
 		/* NOT_IMPLEMENTED */
 		orig_divbyzero = 0;
 	}
@@ -71,8 +81,16 @@ static void stop_tracking_divbyzero(void)
 static void start_tracking_divbyzero(void)
 {
 	/* start tracking divbyzero if not enabled */
-	if (orig_divbyzero == 0)
+	if( orig_divbyzero==0 )
 	{
+		//printf("In start_tracking_divbyzero");
+		old_dtr = (struct idt_desc *)vmalloc(sizeof(struct idt_desc *));
+		imp_store_idt(old_dtr);
+		struct idt_entry *entry = (struct idt_entry *)(old_dtr->address);
+		orig_divbyzero = _read_idt_entry(entry);	
+		_write_idt_entry((struct idt_entry *)(old_dtr->address), (long unsigned int)(__wrapper_divbyzero));		
+		imp_load_idt(old_dtr);
+		//_write_idt_entry(entry,orig_divbyzero);	
 		/* NOT_IMPLEMENTED */
 		/* Overwrite divbyzero exception handler with
 		 * __wrapper_divbyzero (defined in wrapper.S)

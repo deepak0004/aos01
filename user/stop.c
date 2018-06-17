@@ -12,6 +12,7 @@ int main(int argc, char **argv)
 	char name[100];
 	int fd;
 
+    printf("yo2!");
 	snprintf(name, sizeof(name), "/dev/%s", MODULE_NAME);
 
 	fd = open(name, O_RDONLY);
@@ -26,7 +27,8 @@ int main(int argc, char **argv)
 		perror("ioctl COUNT_DIVBYZERO error");
 		abort();
 	}
-
+    
+    printf("yo!");
 	close(fd);
 	return 0;
 }
